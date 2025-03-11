@@ -1,155 +1,165 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8"/>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Simple UI Builder</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body {
-            font-family: 'Courier New', Courier, monospace;
-        }
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(100, 1fr);
-            gap: 1px;
-            width: 100%;
-            height: 100%;
-            border: 1px solid #4B5563;
-            overflow: auto;
-        }
-        .grid-item {
-            width: 16px;
-            height: 16px;
-            border: 1px solid #4B5563;
-            background-color: #1F2937;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Draggable Image on Grid</title>
+  <style>
+    /* Reset */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    html, body {
+      height: 100%;
+      font-family: sans-serif;
+    }
+    /* Container layout: grid (80%) + sidebar (20%) */
+    body {
+      display: flex;
+    }
+    /* The grid container on the left */
+    .grid-container {
+      width: 80%;
+      height: 100vh;
+      position: relative; /* needed for absolute positioning of dropped images */
+      background-color: #fafafa;
+      overflow: auto;
+      /* Create a 100x100 grid of 16px cells */
+      display: grid;
+      grid-template-columns: repeat(100, 16px);
+      grid-template-rows: repeat(100, 16px);
+      /* Optional: a light border for each cell */
+      background-image: 
+        linear-gradient(to right, #ccc 1px, transparent 1px),
+        linear-gradient(to bottom, #ccc 1px, transparent 1px);
+      background-size: 16px 16px;
+    }
+    /* The sidebar on the right */
+    .sidebar {
+      width: 20%;
+      padding: 10px;
+      background-color: #eee;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    /* Draggable image style */
+    .draggable-image {
+      width: 256px;
+      height: 256px;
+      cursor: move;
+      border: 2px solid #888;
+      margin-bottom: 20px;
+      user-select: none;
+    }
+    /* Upload button style */
+    .upload-button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
 </head>
-<body class="bg-black text-gray-400 flex flex-col items-center justify-between h-screen p-4">
-    <div class="text-center text-2xl">
-        SIMPLE UI BUILDER
-    </div>
-    <div class="flex flex-row items-center justify-center w-full">
-        <div class="flex-grow">
-            <div class="grid-container">
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-                <div class="grid-item"></div>
-            </div>
-        </div>
-        <div class="flex flex-col items-center space-y-4">
-            <img alt="Red arrow pointing right" class="w-12 h-12" height="50" src="https://storage.googleapis.com/a1aa/image/koccRRZhgVukTJsk5fStgxtXPv50T2vZ_Wzles19XDU.jpg" width="50"/>
-            <div class="w-full h-1 bg-gray-600"></div>
-            <img alt="Yellow arrow pointing left" class="w-12 h-12" height="50" src="https://storage.googleapis.com/a1aa/image/a-r44vRhSoOE11L8OSUWM2itlBJ0NJfpqLhVqgQ8Ww8.jpg" width="50"/>
-            <div class="w-full h-1 bg-gray-600"></div>
-            <img alt="Gray gear icon" class="w-12 h-12" height="50" src="https://storage.googleapis.com/a1aa/image/2rWK2p4ZJtV3rXzo7D-A0Zt5ZUZiAzVoKq_z3uVSswo.jpg" width="50"/>
-            <div class="w-full h-1 bg-gray-600"></div>
-            <img alt="Blue arrow pointing down" class="w-12 h-12" height="50" src="https://storage.googleapis.com/a1aa/image/FtTLN2GPr9KWJqSAGUN9PC8VgLKcwpunX0TCJRwgK1E.jpg" width="50"/>
-            <div class="w-full h-1 bg-gray-600"></div>
-            <button class="bg-cyan-400 text-black px-4 py-2 mt-4">Add UI Element</button>
-        </div>
-        <div class="flex-grow"></div>
-    </div>
-    <div class="flex flex-col items-center space-y-2 mt-4">
-        <button class="bg-green-500 text-black px-4 py-2">Generate UI Code</button>
-    </div>
+<body>
+  <!-- Left: the grid container -->
+  <div class="grid-container" id="grid">
+    <!-- We use a CSS background grid so no need to create 10,000 DOM cells -->
+  </div>
+
+  <!-- Right: the sidebar -->
+  <div class="sidebar">
+    <!-- Draggable image (default placeholder) -->
+    <img src="https://via.placeholder.com/256" 
+         alt="Draggable" 
+         id="draggable" 
+         class="draggable-image">
+    <!-- Hidden file input and button for uploading a new image -->
+    <input type="file" id="fileInput" accept="image/*" style="display: none;">
+    <button class="upload-button" id="uploadBtn">Upload Image</button>
+  </div>
+
+  <script>
+    // Global variable to store the element being dragged.
+    let draggedElement = null;
+    
+    // Get elements
+    const grid = document.getElementById('grid');
+    const sidebarImg = document.getElementById('draggable');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const fileInput = document.getElementById('fileInput');
+
+    // Enable dragging on the sidebar image.
+    sidebarImg.draggable = true;
+    sidebarImg.addEventListener('dragstart', function(e) {
+      draggedElement = this;
+      // Optionally, you can set a custom drag image.
+      e.dataTransfer.setData('text/plain', 'sidebar');
+    });
+
+    // When starting a drag from an image already on the grid,
+    // store that image so we know to reposition it (rather than clone).
+    function addGridImageDragListeners(img) {
+      img.addEventListener('dragstart', function(e) {
+        draggedElement = this;
+        e.dataTransfer.setData('text/plain', 'grid');
+        // Set a drag image centered on the image.
+        e.dataTransfer.setDragImage(this, 128, 128);
+      });
+    }
+
+    // Allow drop on the grid.
+    grid.addEventListener('dragover', function(e) {
+      e.preventDefault();
+    });
+
+    grid.addEventListener('drop', function(e) {
+      e.preventDefault();
+      const rect = grid.getBoundingClientRect();
+      // Calculate drop position relative to grid
+      let x = e.clientX - rect.left;
+      let y = e.clientY - rect.top;
+      // Snap to grid (each cell is 16px)
+      x = Math.floor(x / 16) * 16;
+      y = Math.floor(y / 16) * 16;
+      
+      // If the dragged element is already in the grid, reposition it.
+      if (draggedElement && grid.contains(draggedElement)) {
+        draggedElement.style.left = x + 'px';
+        draggedElement.style.top = y + 'px';
+      } else if (draggedElement) {
+        // Otherwise, clone the sidebar image into the grid.
+        const img = document.createElement('img');
+        img.src = draggedElement.src;
+        img.style.position = 'absolute';
+        img.style.left = x + 'px';
+        img.style.top = y + 'px';
+        img.style.width = '256px';
+        img.style.height = '256px';
+        img.classList.add('draggable-image');
+        img.draggable = true;
+        addGridImageDragListeners(img);
+        grid.appendChild(img);
+      }
+      draggedElement = null;
+    });
+
+    // File upload functionality.
+    uploadBtn.addEventListener('click', function() {
+      fileInput.click();
+    });
+
+    fileInput.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if(file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          // Update the sidebar image with the uploaded image.
+          sidebarImg.src = event.target.result;
+        }
+        reader.readAsDataURL(file);
+      }
+    });
+  </script>
 </body>
 </html>
