@@ -4,12 +4,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Simple UI Builder</title>
   <style>
-    /* Basic reset and fonts */
-    body, html {
+    /* Reset and basic styling */
+    * {
+      box-sizing: border-box;
       margin: 0;
       padding: 0;
-      box-sizing: border-box;
+    }
+    body, html {
       font-family: sans-serif;
+      height: 100%;
     }
     header {
       background: #333;
@@ -17,46 +20,67 @@
       padding: 10px;
       text-align: center;
     }
-    /* Main container: grid and sidebar */
+    /* Layout container */
     .container {
       display: flex;
-      flex-direction: row;
-      height: calc(100vh - 50px);
+      height: calc(100vh - 50px); /* leave space for header */
     }
-    /* Grid container (left 80% of screen) */
-    .grid-container {
+    /* Main builder area (left side) */
+    .grid-wrapper {
       width: 80%;
-      height: 100%;
-      position: relative;
-      background-image:
-        linear-gradient(to right, #ccc 1px, transparent 1px),
-        linear-gradient(to bottom, #ccc 1px, transparent 1px);
-      background-size: calc(100% / 32) calc(100% / 32);
+      overflow: auto;
+      border-right: 1px solid #ccc;
+      background: #f9f9f9;
     }
-    /* Sidebar (right 20% of screen) */
+    /* The actual grid container: 32x32 cells, each 64px x 64px */
+    #grid-container {
+      display: grid;
+      grid-template-columns: repeat(32, 64px);
+      grid-template-rows: repeat(32, 64px);
+      width: calc(32 * 64px);
+      height: calc(32 * 64px);
+      border: 1px solid #ccc;
+    }
+    .grid-cell {
+      border: 1px solid #eee;
+      position: relative;
+      text-align: center;
+      vertical-align: middle;
+      /* Allow the cell to show a background color when selected */
+      background-color: transparent;
+      cursor: pointer;
+    }
+    /* Sidebar (right side): Gallery and upload */
     .sidebar {
       width: 20%;
       padding: 10px;
-      box-sizing: border-box;
-      border-left: 1px solid #ccc;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      overflow-y: auto;
     }
-    .sidebar img {
-      max-width: 100%;
-      height: auto;
-      cursor: move;
+    #gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, 128px);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    #gallery img {
+      width: 128px;
+      height: 128px;
+      object-fit: cover;
+      cursor: pointer;
+      border: 2px solid transparent;
+    }
+    #gallery img.selected {
+      border-color: blue;
     }
     .upload-btn {
-      margin-top: 20px;
+      width: 100%;
     }
-    /* Responsive adjustments for mobile devices */
+    /* Responsive adjustments */
     @media(max-width: 768px) {
       .container {
         flex-direction: column;
       }
-      .grid-container, .sidebar {
+      .grid-wrapper, .sidebar {
         width: 100%;
         height: 50vh;
       }
@@ -68,71 +92,101 @@
     <h1>Simple UI Builder</h1>
   </header>
   <div class="container">
-    <div class="grid-container" id="grid-container"></div>
+    <!-- Main builder grid wrapped in a scrollable container -->
+    <div class="grid-wrapper">
+      <div id="grid-container"></div>
+    </div>
+    <!-- Sidebar: gallery and upload input -->
     <div class="sidebar">
-      <img src="your-image.png" alt="Draggable" id="draggable-element" draggable="true">
-      <input type="file" id="image-upload" accept="image/*" class="upload-btn">
+      <div id="gallery">
+        <!-- Uploaded images will appear here -->
+      </div>
+      <input type="file" id="image-upload" accept="image/*" multiple class="upload-btn">
     </div>
   </div>
   <script>
+    // Global variable to store the currently selected image source.
+    let selectedImageSrc = null;
+    // Variable to track the currently highlighted grid cell (for placement)
+    let highlightedCell = null;
+    
+    // Create the 32x32 grid cells.
     const gridContainer = document.getElementById('grid-container');
-    const draggableElement = document.getElementById('draggable-element');
-
-    // Enhance dragstart: set drag data and a custom drag image
-    draggableElement.addEventListener('dragstart', function(e) {
-      e.dataTransfer.setData('text/plain', e.target.src);
-      // Optionally, set a custom drag image (centered)
-      if (e.dataTransfer.setDragImage) {
-        const dragIcon = new Image();
-        dragIcon.src = e.target.src;
-        // Wait until the image is loaded
-        dragIcon.onload = function() {
-          e.dataTransfer.setDragImage(dragIcon, dragIcon.width / 2, dragIcon.height / 2);
-        };
+    const totalRows = 32;
+    const totalCols = 32;
+    
+    for (let row = 0; row < totalRows; row++) {
+      for (let col = 0; col < totalCols; col++) {
+        const cell = document.createElement('div');
+        cell.classList.add('grid-cell');
+        // Optionally add data attributes if needed later
+        cell.dataset.row = row;
+        cell.dataset.col = col;
+        gridContainer.appendChild(cell);
+      }
+    }
+    
+    // Handle clicks on grid cells.
+    gridContainer.addEventListener('click', function(e) {
+      const cell = e.target;
+      // Ensure we only react to clicks on cells.
+      if (!cell.classList.contains('grid-cell')) return;
+      if (!selectedImageSrc) {
+        alert("Please select an image from the gallery first.");
+        return;
+      }
+      
+      // If this cell is already highlighted, treat this as the second click.
+      if (highlightedCell === cell) {
+        // Place the selected image into the cell.
+        // Clear the cell first (or decide if you want to allow multiple placements)
+        cell.innerHTML = "";
+        const img = document.createElement('img');
+        img.src = selectedImageSrc;
+        // Fit image to the cell (cell is 64px, so the image will be scaled down).
+        img.style.width = "100%";
+        img.style.height = "100%";
+        cell.appendChild(img);
+        // Remove highlight.
+        cell.style.backgroundColor = "";
+        highlightedCell = null;
+      } else {
+        // If another cell was highlighted, clear its highlight.
+        if (highlightedCell) {
+          highlightedCell.style.backgroundColor = "";
+        }
+        // Highlight the current cell (first click)
+        cell.style.backgroundColor = "green";
+        highlightedCell = cell;
       }
     });
-
-    // Allow drop over the grid container.
-    gridContainer.addEventListener('dragover', function(e) {
-      e.preventDefault();
-    });
-
-    gridContainer.addEventListener('drop', function(e) {
-      e.preventDefault();
-      const rect = gridContainer.getBoundingClientRect();
-      const cellSize = rect.width / 32;
-      const offsetX = e.clientX - rect.left;
-      const offsetY = e.clientY - rect.top;
-      const col = Math.floor(offsetX / cellSize);
-      const row = Math.floor(offsetY / cellSize);
-
-      // Create a new image element based on the dragged image.
-      const img = document.createElement('img');
-      img.src = e.dataTransfer.getData('text/plain');
-      img.style.position = 'absolute';
-      img.style.width = (cellSize * 16) + 'px';
-      img.style.height = (cellSize * 16) + 'px';
-      img.style.left = (col * cellSize) + 'px';
-      img.style.top = (row * cellSize) + 'px';
-      img.draggable = false;
-      gridContainer.appendChild(img);
-    });
-
-    // Handle image upload: update the draggable element's image.
+    
+    // Handle image upload.
     const imageUpload = document.getElementById('image-upload');
+    const gallery = document.getElementById('gallery');
+    
     imageUpload.addEventListener('change', function(e) {
-      const file = e.target.files[0];
-      if (file) {
+      const files = e.target.files;
+      for (let file of files) {
         const reader = new FileReader();
         reader.onload = function(event) {
-          draggableElement.src = event.target.result;
-        };
+          const img = document.createElement('img');
+          img.src = event.target.result;
+          // Add click listener to select the image.
+          img.addEventListener('click', function() {
+            // Remove selection from all gallery images.
+            document.querySelectorAll('#gallery img').forEach(el => el.classList.remove('selected'));
+            // Mark this image as selected.
+            img.classList.add('selected');
+            selectedImageSrc = img.src;
+          });
+          gallery.appendChild(img);
+        }
         reader.readAsDataURL(file);
       }
+      // Clear the file input after processing.
+      imageUpload.value = "";
     });
-
-    // Note: HTML5 drag and drop does not work on many mobile browsers.
-    // For mobile support, consider implementing touch event handlers or a library.
   </script>
 </body>
 </html>
