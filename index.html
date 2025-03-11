@@ -20,42 +20,54 @@
       padding: 10px;
       text-align: center;
     }
-    /* Layout container */
+    /* Main container: grid on left, sidebar on right */
     .container {
       display: flex;
-      height: calc(100vh - 50px); /* leave space for header */
+      height: calc(100vh - 50px); /* space for header */
     }
-    /* Main builder area (left side) */
+    /* Grid wrapper for scrolling */
     .grid-wrapper {
       width: 80%;
       overflow: auto;
       border-right: 1px solid #ccc;
       background: #f9f9f9;
     }
-    /* The actual grid container: 32x32 cells, each 64px x 64px */
+    /* The grid container: 32x32 cells, each 128px by 128px */
     #grid-container {
       display: grid;
-      grid-template-columns: repeat(32, 64px);
-      grid-template-rows: repeat(32, 64px);
-      width: calc(32 * 64px);
-      height: calc(32 * 64px);
+      grid-template-columns: repeat(32, 128px);
+      grid-template-rows: repeat(32, 128px);
+      width: calc(32 * 128px);
+      height: calc(32 * 128px);
       border: 1px solid #ccc;
+      /* Will be scaled via JavaScript */
+      transform-origin: top left;
+      transition: transform 0.2s ease;
     }
     .grid-cell {
       border: 1px solid #eee;
       position: relative;
-      text-align: center;
-      vertical-align: middle;
-      /* Allow the cell to show a background color when selected */
-      background-color: transparent;
       cursor: pointer;
+      background-color: transparent;
     }
-    /* Sidebar (right side): Gallery and upload */
+    /* Sidebar: gallery, upload, and zoom controls */
     .sidebar {
       width: 20%;
       padding: 10px;
       overflow-y: auto;
     }
+    /* Zoom controls styling */
+    #zoom-controls {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    #zoom-controls button {
+      margin: 5px;
+      padding: 8px 12px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    /* Gallery grid */
     #gallery {
       display: grid;
       grid-template-columns: repeat(auto-fill, 128px);
@@ -92,14 +104,18 @@
     <h1>Simple UI Builder</h1>
   </header>
   <div class="container">
-    <!-- Main builder grid wrapped in a scrollable container -->
+    <!-- Main grid area -->
     <div class="grid-wrapper">
       <div id="grid-container"></div>
     </div>
-    <!-- Sidebar: gallery and upload input -->
+    <!-- Sidebar with zoom controls, gallery, and upload -->
     <div class="sidebar">
+      <div id="zoom-controls">
+        <button id="zoom-in">Zoom In</button>
+        <button id="zoom-out">Zoom Out</button>
+      </div>
       <div id="gallery">
-        <!-- Uploaded images will appear here -->
+        <!-- Uploaded image thumbnails appear here -->
       </div>
       <input type="file" id="image-upload" accept="image/*" multiple class="upload-btn">
     </div>
@@ -107,47 +123,44 @@
   <script>
     // Global variable to store the currently selected image source.
     let selectedImageSrc = null;
-    // Variable to track the currently highlighted grid cell (for placement)
+    // Variable to track the currently highlighted grid cell.
     let highlightedCell = null;
+    // Zoom scale factor (initially 1)
+    let zoomScale = 1;
     
-    // Create the 32x32 grid cells.
     const gridContainer = document.getElementById('grid-container');
     const totalRows = 32;
     const totalCols = 32;
     
+    // Create the grid cells.
     for (let row = 0; row < totalRows; row++) {
       for (let col = 0; col < totalCols; col++) {
         const cell = document.createElement('div');
         cell.classList.add('grid-cell');
-        // Optionally add data attributes if needed later
+        // Save the cell's row and column (optional for further use)
         cell.dataset.row = row;
         cell.dataset.col = col;
         gridContainer.appendChild(cell);
       }
     }
     
-    // Handle clicks on grid cells.
+    // Handle grid cell clicks.
     gridContainer.addEventListener('click', function(e) {
       const cell = e.target;
-      // Ensure we only react to clicks on cells.
       if (!cell.classList.contains('grid-cell')) return;
       if (!selectedImageSrc) {
         alert("Please select an image from the gallery first.");
         return;
       }
       
-      // If this cell is already highlighted, treat this as the second click.
+      // If the same cell is clicked twice, place the image.
       if (highlightedCell === cell) {
-        // Place the selected image into the cell.
-        // Clear the cell first (or decide if you want to allow multiple placements)
         cell.innerHTML = "";
         const img = document.createElement('img');
         img.src = selectedImageSrc;
-        // Fit image to the cell (cell is 64px, so the image will be scaled down).
         img.style.width = "100%";
         img.style.height = "100%";
         cell.appendChild(img);
-        // Remove highlight.
         cell.style.backgroundColor = "";
         highlightedCell = null;
       } else {
@@ -155,13 +168,31 @@
         if (highlightedCell) {
           highlightedCell.style.backgroundColor = "";
         }
-        // Highlight the current cell (first click)
+        // Highlight the clicked cell.
         cell.style.backgroundColor = "green";
         highlightedCell = cell;
       }
     });
     
-    // Handle image upload.
+    // Zoom functionality.
+    const zoomInButton = document.getElementById('zoom-in');
+    const zoomOutButton = document.getElementById('zoom-out');
+    
+    zoomInButton.addEventListener('click', function() {
+      zoomScale *= 1.2; // Increase zoom scale.
+      updateZoom();
+    });
+    
+    zoomOutButton.addEventListener('click', function() {
+      zoomScale /= 1.2; // Decrease zoom scale.
+      updateZoom();
+    });
+    
+    function updateZoom() {
+      gridContainer.style.transform = "scale(" + zoomScale + ")";
+    }
+    
+    // Handle image uploads and add to gallery.
     const imageUpload = document.getElementById('image-upload');
     const gallery = document.getElementById('gallery');
     
@@ -172,11 +203,9 @@
         reader.onload = function(event) {
           const img = document.createElement('img');
           img.src = event.target.result;
-          // Add click listener to select the image.
+          // On clicking a thumbnail, select the image.
           img.addEventListener('click', function() {
-            // Remove selection from all gallery images.
             document.querySelectorAll('#gallery img').forEach(el => el.classList.remove('selected'));
-            // Mark this image as selected.
             img.classList.add('selected');
             selectedImageSrc = img.src;
           });
@@ -184,7 +213,7 @@
         }
         reader.readAsDataURL(file);
       }
-      // Clear the file input after processing.
+      // Clear the file input.
       imageUpload.value = "";
     });
   </script>
