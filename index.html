@@ -1,161 +1,135 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Draggable Image on Grid</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple UI Builder</title>
   <style>
-    /* Reset */
-    * {
-      box-sizing: border-box;
+    /* Basic reset and fonts */
+    body, html {
       margin: 0;
       padding: 0;
-    }
-    html, body {
-      height: 100%;
+      box-sizing: border-box;
       font-family: sans-serif;
     }
-    /* Container layout: grid (80%) + sidebar (20%) */
-    body {
-      display: flex;
+    header {
+      background: #333;
+      color: white;
+      padding: 10px;
+      text-align: center;
     }
-    /* The grid container on the left */
+    /* Main container: grid and sidebar */
+    .container {
+      display: flex;
+      flex-direction: row;
+      height: calc(100vh - 50px); /* leaving room for the header */
+    }
+    /* Grid container (left 80% of screen) */
     .grid-container {
       width: 80%;
-      height: 100vh;
-      position: relative; /* needed for absolute positioning of dropped images */
-      background-color: #fafafa;
-      overflow: auto;
-      /* Create a 100x100 grid of 16px cells */
-      display: grid;
-      grid-template-columns: repeat(1, 160px);
-      grid-template-rows: repeat(1, 160px);
-      /* Optional: a light border for each cell */
-      background-image: 
+      height: 100%;
+      position: relative;
+      /* Create grid lines using CSS background gradients */
+      background-image:
         linear-gradient(to right, #ccc 1px, transparent 1px),
         linear-gradient(to bottom, #ccc 1px, transparent 1px);
-      background-size: 16px 16px;
+      background-size: calc(100% / 32) calc(100% / 32);
     }
-    /* The sidebar on the right */
+    /* Sidebar (right 20% of screen) */
     .sidebar {
       width: 20%;
       padding: 10px;
-      background-color: #eee;
+      box-sizing: border-box;
+      border-left: 1px solid #ccc;
       display: flex;
       flex-direction: column;
       align-items: center;
     }
-    /* Draggable image style */
-    .draggable-image {
-      width: 256px;
-      height: 256px;
+    .sidebar img {
+      max-width: 100%;
+      height: auto;
       cursor: move;
-      border: 2px solid #888;
-      margin-bottom: 20px;
-      user-select: none;
     }
-    /* Upload button style */
-    .upload-button {
-      padding: 10px 20px;
-      font-size: 16px;
-      cursor: pointer;
+    .upload-btn {
+      margin-top: 20px;
+    }
+    /* Responsive adjustments for mobile devices */
+    @media(max-width: 768px) {
+      .container {
+        flex-direction: column;
+      }
+      .grid-container, .sidebar {
+        width: 100%;
+        height: 50vh;
+      }
     }
   </style>
 </head>
 <body>
-  <!-- Left: the grid container -->
-  <div class="grid-container" id="grid">
-    <!-- We use a CSS background grid so no need to create 10,000 DOM cells -->
+  <header>
+    <h1>Simple UI Builder</h1>
+  </header>
+  <div class="container">
+    <!-- The grid container on the left -->
+    <div class="grid-container" id="grid-container">
+      <!-- Dropped images will be positioned here -->
+    </div>
+    <!-- The sidebar on the right -->
+    <div class="sidebar">
+      <!-- Draggable image element (replace "your-image.png" with your default image path) -->
+      <img src="your-image.png" alt="Draggable" id="draggable-element" draggable="true">
+      <!-- Image upload button -->
+      <input type="file" id="image-upload" accept="image/*" class="upload-btn">
+    </div>
   </div>
-
-  <!-- Right: the sidebar -->
-  <div class="sidebar">
-    <!-- Draggable image (default placeholder) -->
-    <img src="https://via.placeholder.com/256" 
-         alt="Draggable" 
-         id="draggable" 
-         class="draggable-image">
-    <!-- Hidden file input and button for uploading a new image -->
-    <input type="file" id="fileInput" accept="image/*" style="display: none;">
-    <button class="upload-button" id="uploadBtn">Upload Image</button>
-  </div>
-
   <script>
-    // Global variable to store the element being dragged.
-    let draggedElement = null;
+    const gridContainer = document.getElementById('grid-container');
+    const draggableElement = document.getElementById('draggable-element');
     
-    // Get elements
-    const grid = document.getElementById('grid');
-    const sidebarImg = document.getElementById('draggable');
-    const uploadBtn = document.getElementById('uploadBtn');
-    const fileInput = document.getElementById('fileInput');
-
-    // Enable dragging on the sidebar image.
-    sidebarImg.draggable = true;
-    sidebarImg.addEventListener('dragstart', function(e) {
-      draggedElement = this;
-      // Optionally, you can set a custom drag image.
-      e.dataTransfer.setData('text/plain', 'sidebar');
+    // When drag starts, set the image source as drag data.
+    draggableElement.addEventListener('dragstart', function(e) {
+      e.dataTransfer.setData('text/plain', e.target.src);
     });
-
-    // When starting a drag from an image already on the grid,
-    // store that image so we know to reposition it (rather than clone).
-    function addGridImageDragListeners(img) {
-      img.addEventListener('dragstart', function(e) {
-        draggedElement = this;
-        e.dataTransfer.setData('text/plain', 'grid');
-        // Set a drag image centered on the image.
-        e.dataTransfer.setDragImage(this, 128, 128);
-      });
-    }
-
-    // Allow drop on the grid.
-    grid.addEventListener('dragover', function(e) {
+    
+    // Allow drop over the grid container.
+    gridContainer.addEventListener('dragover', function(e) {
       e.preventDefault();
     });
-
-    grid.addEventListener('drop', function(e) {
+    
+    gridContainer.addEventListener('drop', function(e) {
       e.preventDefault();
-      const rect = grid.getBoundingClientRect();
-      // Calculate drop position relative to grid
-      let x = e.clientX - rect.left;
-      let y = e.clientY - rect.top;
-      // Snap to grid (each cell is 16px)
-      x = Math.floor(x / 16) * 16;
-      y = Math.floor(y / 16) * 16;
+      // Get grid container dimensions.
+      const rect = gridContainer.getBoundingClientRect();
+      const cellSize = rect.width / 32; // each cell’s width (grid is 32 columns)
+      // Calculate drop position relative to the grid container.
+      const offsetX = e.clientX - rect.left;
+      const offsetY = e.clientY - rect.top;
+      // Snap the drop position to the nearest cell.
+      const col = Math.floor(offsetX / cellSize);
+      const row = Math.floor(offsetY / cellSize);
       
-      // If the dragged element is already in the grid, reposition it.
-      if (draggedElement && grid.contains(draggedElement)) {
-        draggedElement.style.left = x + 'px';
-        draggedElement.style.top = y + 'px';
-      } else if (draggedElement) {
-        // Otherwise, clone the sidebar image into the grid.
-        const img = document.createElement('img');
-        img.src = draggedElement.src;
-        img.style.position = 'absolute';
-        img.style.left = x + 'px';
-        img.style.top = y + 'px';
-        img.style.width = '256px';
-        img.style.height = '256px';
-        img.classList.add('draggable-image');
-        img.draggable = true;
-        addGridImageDragListeners(img);
-        grid.appendChild(img);
-      }
-      draggedElement = null;
+      // Create a new image element for the drop.
+      const img = document.createElement('img');
+      img.src = e.dataTransfer.getData('text/plain');
+      img.style.position = 'absolute';
+      // Set the image to span 16 cells (16px per cell scaling concept).
+      img.style.width = (cellSize * 16) + 'px';
+      img.style.height = (cellSize * 16) + 'px';
+      // Position the image so its top-left aligns with the grid cell.
+      img.style.left = (col * cellSize) + 'px';
+      img.style.top = (row * cellSize) + 'px';
+      // Prevent the dropped image from being draggable.
+      img.draggable = false;
+      gridContainer.appendChild(img);
     });
-
-    // File upload functionality.
-    uploadBtn.addEventListener('click', function() {
-      fileInput.click();
-    });
-
-    fileInput.addEventListener('change', function(e) {
+    
+    // Handle image upload: update the draggable element's image.
+    const imageUpload = document.getElementById('image-upload');
+    imageUpload.addEventListener('change', function(e) {
       const file = e.target.files[0];
-      if(file) {
+      if (file) {
         const reader = new FileReader();
         reader.onload = function(event) {
-          // Update the sidebar image with the uploaded image.
-          sidebarImg.src = event.target.result;
+          draggableElement.src = event.target.result;
         }
         reader.readAsDataURL(file);
       }
