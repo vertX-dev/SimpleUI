@@ -25,7 +25,7 @@
     /* Main container: grid on left, sidebar on right */
     .container {
       display: flex;
-      height: calc(100vh + 300px); /* leave space for header */
+      height: calc(100vh - 50px); /* leave space for header */
     }
     /* Grid wrapper: scrollable and centered */
     .grid-wrapper {
@@ -39,10 +39,10 @@
     /* Grid container: 32x32 cells, each 64px x 64px */
     #grid-container {
       display: grid;
-      grid-template-columns: repeat(32, 12px);
-      grid-template-rows: repeat(32, 12px);
-      width: calc(32 * 12px);
-      height: calc(32 * 12px);
+      grid-template-columns: repeat(32, 32px);
+      grid-template-rows: repeat(32, 32px);
+      width: calc(32 * 32px);
+      height: calc(32 * 32px);
       border: 3px solid #888; /* Huge border for grid */
       background: #fff;       /* White background for contrast */
     }
