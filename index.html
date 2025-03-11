@@ -13,6 +13,8 @@
     body, html {
       font-family: sans-serif;
       height: 100%;
+      background: #051928; /* Dark background */
+      color: #fff;
     }
     header {
       background: #333;
@@ -23,57 +25,42 @@
     /* Main container: grid on left, sidebar on right */
     .container {
       display: flex;
-      height: calc(100vh - 50px); /* leaving room for header */
+      height: calc(100vh - 50px); /* leave space for header */
     }
-    /* Grid wrapper: using flex centering to avoid scrolling into void when zoomed out */
+    /* Grid wrapper: scrollable and centered */
     .grid-wrapper {
       width: 80%;
+      overflow: auto;
       display: flex;
       align-items: center;
       justify-content: center;
-      overflow: auto;
-      border-right: 2px solid #888;
-      background: #f9f9f9;
+      background: #051928;
     }
-    /* Grid container: 32x32 cells – each cell represents one “16px unit” of the placed image.
-       (We set each cell’s display size here; note that zoom will scale the entire grid.) */
+    /* Grid container: 32x32 cells, each 64px x 64px */
     #grid-container {
       display: grid;
-      grid-template-columns: repeat(32, 128px);
-      grid-template-rows: repeat(32, 128px);
-      width: calc(32 * 128px);
-      height: calc(32 * 128px);
-      border: 2px solid #888;
-      box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
-      transform-origin: top left;
-      transition: transform 0.2s ease;
+      grid-template-columns: repeat(32, 64px);
+      grid-template-rows: repeat(32, 64px);
+      width: calc(32 * 64px);
+      height: calc(32 * 64px);
+      border: 5px solid #888; /* Huge border for grid */
+      background: #fff;       /* White background for contrast */
     }
     .grid-cell {
-      border: 1px solid #ddd;
+      border: 1px solid #ddd; /* Small border for each cell */
       position: relative;
       cursor: pointer;
       background-color: transparent;
     }
-    /* When a cell is highlighted (first click) */
     .grid-cell.highlighted {
       background-color: rgba(0, 255, 0, 0.3);
     }
-    /* Sidebar: zoom controls, gallery, and upload */
+    /* Sidebar: gallery and upload */
     .sidebar {
       width: 20%;
       padding: 10px;
       overflow-y: auto;
-    }
-    /* Zoom controls styling */
-    #zoom-controls {
-      margin-bottom: 20px;
-      text-align: center;
-    }
-    #zoom-controls button {
-      margin: 5px;
-      padding: 8px 12px;
-      font-size: 14px;
-      cursor: pointer;
+      background: #051928;
     }
     /* Gallery grid styling */
     #gallery {
@@ -116,12 +103,8 @@
     <div class="grid-wrapper">
       <div id="grid-container"></div>
     </div>
-    <!-- Sidebar with zoom controls, gallery, and upload -->
+    <!-- Sidebar: gallery and upload -->
     <div class="sidebar">
-      <div id="zoom-controls">
-        <button id="zoom-in">Zoom In</button>
-        <button id="zoom-out">Zoom Out</button>
-      </div>
       <div id="gallery">
         <!-- Uploaded image thumbnails will appear here -->
       </div>
@@ -130,14 +113,12 @@
   </div>
   <script>
     // Global variables
-    let selectedImageSrc = null; // source of the currently selected image
-    let highlightedCell = null;  // the grid cell currently highlighted for placement
-
-    // Grid dimensions (32x32 cells)
+    let selectedImageSrc = null;
+    let highlightedCell = null;
     const totalRows = 32, totalCols = 32;
     const gridContainer = document.getElementById('grid-container');
 
-    // Create grid cells (each cell is a div with data attributes for row/col)
+    // Create grid cells (each cell represents one “unit”)
     for (let row = 0; row < totalRows; row++) {
       for (let col = 0; col < totalCols; col++) {
         const cell = document.createElement('div');
@@ -148,35 +129,13 @@
       }
     }
 
-    // Zoom functionality variables and functions
-    let zoomScale = 1;
-    const zoomInButton = document.getElementById('zoom-in');
-    const zoomOutButton = document.getElementById('zoom-out');
-
-    zoomInButton.addEventListener('click', () => {
-      zoomScale *= 1.2;
-      updateZoom();
-    });
-    zoomOutButton.addEventListener('click', () => {
-      zoomScale /= 1.2;
-      updateZoom();
-    });
-    function updateZoom() {
-      gridContainer.style.transform = "scale(" + zoomScale + ")";
-      // With flex centering in the wrapper, when the scaled grid is smaller than the wrapper,
-      // the grid remains centered and no extra scrolling into void is possible.
-    }
-
-    // Handle grid cell clicks for placement
+    // Handle grid cell clicks for image placement.
     gridContainer.addEventListener('click', function(e) {
-      // Ensure the click target is a grid cell.
       let cell = e.target;
       if (!cell.classList.contains('grid-cell')) {
-        // If an inner element (like an img) is clicked, get its parent cell.
         cell = cell.closest('.grid-cell');
         if (!cell) return;
       }
-      // Read the cell's grid coordinates.
       const anchorRow = parseInt(cell.dataset.row);
       const anchorCol = parseInt(cell.dataset.col);
 
@@ -185,20 +144,18 @@
         return;
       }
 
-      // If this cell is already highlighted, treat this as the second click (confirm placement)
+      // Second click: if the cell is already highlighted, place the image.
       if (highlightedCell === cell) {
-        // Remove the highlight from the anchor cell.
         cell.classList.remove('highlighted');
         highlightedCell = null;
 
-        // Create a temporary image to get its natural dimensions.
+        // Create a temporary image to determine its natural size.
         const tempImg = new Image();
         tempImg.onload = function() {
           const naturalWidth = tempImg.naturalWidth;
           const naturalHeight = tempImg.naturalHeight;
-          // Determine if we need to split the image.
+          // If image is 16x16 or smaller, place directly.
           if(naturalWidth <= 16 && naturalHeight <= 16) {
-            // Single cell placement
             cell.innerHTML = "";
             const placedImg = document.createElement('img');
             placedImg.src = selectedImageSrc;
@@ -206,23 +163,19 @@
             placedImg.style.height = "100%";
             cell.appendChild(placedImg);
           } else {
-            // Calculate how many grid cells the image spans.
-            // One grid cell corresponds to 16 image pixels.
+            // For larger images, split them into pieces so that one grid cell corresponds to 16 image pixels.
             const cellsX = Math.ceil(naturalWidth / 16);
             const cellsY = Math.ceil(naturalHeight / 16);
-            // Compute each piece’s dimensions (in the source image)
             const pieceWidth = naturalWidth / cellsX;
             const pieceHeight = naturalHeight / cellsY;
-            // Determine anchor offsets within the image block.
-            // For odd number, the center cell is used.
-            // For even number, choose the bottom‐left of the two central cells.
+            // Determine the anchor offset:
             const anchorOffsetX = (cellsX % 2 === 1) ? Math.floor(cellsX/2) : (cellsX/2 - 1);
             const anchorOffsetY = (cellsY % 2 === 1) ? Math.floor(cellsY/2) : (cellsY/2);
-            // Determine top-left cell of the block so that the clicked cell is the anchor.
+            // Calculate top-left cell of the block.
             const topLeftCol = anchorCol - anchorOffsetX;
             const topLeftRow = anchorRow - anchorOffsetY;
             
-            // For each cell in the image block, split and place the corresponding piece.
+            // For each cell in the image block, crop and place the corresponding piece.
             for(let j = 0; j < cellsY; j++){
               for(let i = 0; i < cellsX; i++){
                 const cellCol = topLeftCol + i;
@@ -231,7 +184,6 @@
                 if(cellCol >= 0 && cellCol < totalCols && cellRow >= 0 && cellRow < totalRows){
                   const index = cellRow * totalCols + cellCol;
                   const gridCell = gridContainer.children[index];
-                  // Clear any previous content.
                   gridCell.innerHTML = "";
                   // Create an offscreen canvas to crop the image piece.
                   const canvas = document.createElement('canvas');
@@ -239,7 +191,6 @@
                   canvas.height = pieceHeight;
                   const ctx = canvas.getContext('2d');
                   // Draw the corresponding piece from the source image.
-                  // (i * pieceWidth, j * pieceHeight) is the source rectangle for this piece.
                   ctx.drawImage(tempImg, i * pieceWidth, j * pieceHeight, pieceWidth, pieceHeight, 0, 0, pieceWidth, pieceHeight);
                   // Create an img element from the canvas.
                   const pieceImg = document.createElement('img');
@@ -255,7 +206,6 @@
         tempImg.src = selectedImageSrc;
       } else {
         // First click: highlight the cell.
-        // Remove highlight from any previously highlighted cell.
         if (highlightedCell) {
           highlightedCell.classList.remove('highlighted');
         }
@@ -264,7 +214,7 @@
       }
     });
 
-    // Handle image uploads and build the gallery.
+    // Handle image uploads and add to gallery.
     const imageUpload = document.getElementById('image-upload');
     const gallery = document.getElementById('gallery');
 
@@ -285,7 +235,6 @@
         }
         reader.readAsDataURL(file);
       }
-      // Reset file input.
       imageUpload.value = "";
     });
   </script>
