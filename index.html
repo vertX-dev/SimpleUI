@@ -27,25 +27,24 @@
       display: flex;
       height: calc(100vh - 50px); /* leave space for header */
     }
-    /* Grid wrapper: centers the grid and hides overflow */
+    /* Grid wrapper: scrollable and centered */
     .grid-wrapper {
       width: 80%;
-      overflow: hidden;
+      overflow: auto;
       display: flex;
       align-items: center;
       justify-content: center;
       background: #051928;
     }
-    /* Grid container: 32x32 cells, each 64px x 64px (total 2048x2048) */
+    /* Grid container: 32x32 cells, each 64px x 64px */
     #grid-container {
       display: grid;
-      grid-template-columns: repeat(32, 64px);
-      grid-template-rows: repeat(32, 64px);
-      width: 2048px;
-      height: 2048px;
+      grid-template-columns: repeat(32, 16px);
+      grid-template-rows: repeat(32, 16px);
+      width: calc(32 * 16px);
+      height: calc(32 * 16px);
       border: 5px solid #888; /* Huge border for grid */
       background: #fff;       /* White background for contrast */
-      transform-origin: top left;
     }
     .grid-cell {
       border: 1px solid #ddd; /* Small border for each cell */
@@ -101,7 +100,7 @@
   </header>
   <div class="container">
     <!-- Main grid area -->
-    <div class="grid-wrapper" id="grid-wrapper">
+    <div class="grid-wrapper">
       <div id="grid-container"></div>
     </div>
     <!-- Sidebar: gallery and upload -->
@@ -119,7 +118,7 @@
     const totalRows = 32, totalCols = 32;
     const gridContainer = document.getElementById('grid-container');
 
-    // Create grid cells (each cell is 64x64px)
+    // Create grid cells (each cell represents one “unit”)
     for (let row = 0; row < totalRows; row++) {
       for (let col = 0; col < totalCols; col++) {
         const cell = document.createElement('div');
@@ -129,21 +128,6 @@
         gridContainer.appendChild(cell);
       }
     }
-
-    // Function to update grid scale so that the entire grid is visible in its wrapper.
-    function updateGridScale() {
-      const wrapper = document.getElementById('grid-wrapper');
-      const wrapperWidth = wrapper.clientWidth;
-      const wrapperHeight = wrapper.clientHeight;
-      const gridWidth = 2048; // 32 cells * 64px
-      const gridHeight = 2048;
-      const scale = Math.min(wrapperWidth / gridWidth, wrapperHeight / gridHeight);
-      gridContainer.style.transform = "scale(" + scale + ")";
-    }
-
-    // Run on load and when window is resized.
-    window.addEventListener('load', updateGridScale);
-    window.addEventListener('resize', updateGridScale);
 
     // Handle grid cell clicks for image placement.
     gridContainer.addEventListener('click', function(e) {
@@ -160,15 +144,17 @@
         return;
       }
 
-      // If the same cell is clicked twice, place the image.
+      // Second click: if the cell is already highlighted, place the image.
       if (highlightedCell === cell) {
         cell.classList.remove('highlighted');
         highlightedCell = null;
+
+        // Create a temporary image to determine its natural size.
         const tempImg = new Image();
         tempImg.onload = function() {
           const naturalWidth = tempImg.naturalWidth;
           const naturalHeight = tempImg.naturalHeight;
-          // If image is 16x16 or smaller, place it directly.
+          // If image is 16x16 or smaller, place directly.
           if(naturalWidth <= 16 && naturalHeight <= 16) {
             cell.innerHTML = "";
             const placedImg = document.createElement('img');
@@ -177,7 +163,7 @@
             placedImg.style.height = "100%";
             cell.appendChild(placedImg);
           } else {
-            // For larger images, split them into pieces (each grid cell represents 16 image pixels).
+            // For larger images, split them into pieces so that one grid cell corresponds to 16 image pixels.
             const cellsX = Math.ceil(naturalWidth / 16);
             const cellsY = Math.ceil(naturalHeight / 16);
             const pieceWidth = naturalWidth / cellsX;
@@ -194,16 +180,19 @@
               for(let i = 0; i < cellsX; i++){
                 const cellCol = topLeftCol + i;
                 const cellRow = topLeftRow + j;
-                // Only place pieces within grid boundaries.
+                // Only place pieces within the grid boundaries.
                 if(cellCol >= 0 && cellCol < totalCols && cellRow >= 0 && cellRow < totalRows){
                   const index = cellRow * totalCols + cellCol;
                   const gridCell = gridContainer.children[index];
                   gridCell.innerHTML = "";
+                  // Create an offscreen canvas to crop the image piece.
                   const canvas = document.createElement('canvas');
                   canvas.width = pieceWidth;
                   canvas.height = pieceHeight;
                   const ctx = canvas.getContext('2d');
+                  // Draw the corresponding piece from the source image.
                   ctx.drawImage(tempImg, i * pieceWidth, j * pieceHeight, pieceWidth, pieceHeight, 0, 0, pieceWidth, pieceHeight);
+                  // Create an img element from the canvas.
                   const pieceImg = document.createElement('img');
                   pieceImg.src = canvas.toDataURL();
                   pieceImg.style.width = "100%";
@@ -225,7 +214,7 @@
       }
     });
 
-    // Handle image uploads and build the gallery.
+    // Handle image uploads and add to gallery.
     const imageUpload = document.getElementById('image-upload');
     const gallery = document.getElementById('gallery');
 
