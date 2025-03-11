@@ -21,14 +21,13 @@
     .container {
       display: flex;
       flex-direction: row;
-      height: calc(100vh - 50px); /* leaving room for the header */
+      height: calc(100vh - 50px);
     }
     /* Grid container (left 80% of screen) */
     .grid-container {
       width: 80%;
       height: 100%;
       position: relative;
-      /* Create grid lines using CSS background gradients */
       background-image:
         linear-gradient(to right, #ccc 1px, transparent 1px),
         linear-gradient(to bottom, #ccc 1px, transparent 1px);
@@ -69,59 +68,56 @@
     <h1>Simple UI Builder</h1>
   </header>
   <div class="container">
-    <!-- The grid container on the left -->
-    <div class="grid-container" id="grid-container">
-      <!-- Dropped images will be positioned here -->
-    </div>
-    <!-- The sidebar on the right -->
+    <div class="grid-container" id="grid-container"></div>
     <div class="sidebar">
-      <!-- Draggable image element (replace "your-image.png" with your default image path) -->
       <img src="your-image.png" alt="Draggable" id="draggable-element" draggable="true">
-      <!-- Image upload button -->
       <input type="file" id="image-upload" accept="image/*" class="upload-btn">
     </div>
   </div>
   <script>
     const gridContainer = document.getElementById('grid-container');
     const draggableElement = document.getElementById('draggable-element');
-    
-    // When drag starts, set the image source as drag data.
+
+    // Enhance dragstart: set drag data and a custom drag image
     draggableElement.addEventListener('dragstart', function(e) {
       e.dataTransfer.setData('text/plain', e.target.src);
+      // Optionally, set a custom drag image (centered)
+      if (e.dataTransfer.setDragImage) {
+        const dragIcon = new Image();
+        dragIcon.src = e.target.src;
+        // Wait until the image is loaded
+        dragIcon.onload = function() {
+          e.dataTransfer.setDragImage(dragIcon, dragIcon.width / 2, dragIcon.height / 2);
+        };
+      }
     });
-    
+
     // Allow drop over the grid container.
     gridContainer.addEventListener('dragover', function(e) {
       e.preventDefault();
     });
-    
+
     gridContainer.addEventListener('drop', function(e) {
       e.preventDefault();
-      // Get grid container dimensions.
       const rect = gridContainer.getBoundingClientRect();
-      const cellSize = rect.width / 32; // each cell’s width (grid is 32 columns)
-      // Calculate drop position relative to the grid container.
+      const cellSize = rect.width / 32;
       const offsetX = e.clientX - rect.left;
       const offsetY = e.clientY - rect.top;
-      // Snap the drop position to the nearest cell.
       const col = Math.floor(offsetX / cellSize);
       const row = Math.floor(offsetY / cellSize);
-      
-      // Create a new image element for the drop.
+
+      // Create a new image element based on the dragged image.
       const img = document.createElement('img');
       img.src = e.dataTransfer.getData('text/plain');
       img.style.position = 'absolute';
-      // Set the image to span 16 cells (16px per cell scaling concept).
       img.style.width = (cellSize * 16) + 'px';
       img.style.height = (cellSize * 16) + 'px';
-      // Position the image so its top-left aligns with the grid cell.
       img.style.left = (col * cellSize) + 'px';
       img.style.top = (row * cellSize) + 'px';
-      // Prevent the dropped image from being draggable.
       img.draggable = false;
       gridContainer.appendChild(img);
     });
-    
+
     // Handle image upload: update the draggable element's image.
     const imageUpload = document.getElementById('image-upload');
     imageUpload.addEventListener('change', function(e) {
@@ -130,10 +126,13 @@
         const reader = new FileReader();
         reader.onload = function(event) {
           draggableElement.src = event.target.result;
-        }
+        };
         reader.readAsDataURL(file);
       }
     });
+
+    // Note: HTML5 drag and drop does not work on many mobile browsers.
+    // For mobile support, consider implementing touch event handlers or a library.
   </script>
 </body>
 </html>
