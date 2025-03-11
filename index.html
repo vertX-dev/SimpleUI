@@ -39,11 +39,11 @@
     /* Grid container: 32x32 cells, each 64px x 64px */
     #grid-container {
       display: grid;
-      grid-template-columns: repeat(32, 16px);
-      grid-template-rows: repeat(32, 16px);
-      width: calc(32 * 16px);
-      height: calc(32 * 16px);
-      border: 5px solid #888; /* Huge border for grid */
+      grid-template-columns: repeat(32, 12px);
+      grid-template-rows: repeat(32, 12px);
+      width: calc(32 * 12px);
+      height: calc(32 * 12px);
+      border: 3px solid #888; /* Huge border for grid */
       background: #fff;       /* White background for contrast */
     }
     .grid-cell {
@@ -65,13 +65,13 @@
     /* Gallery grid styling */
     #gallery {
       display: grid;
-      grid-template-columns: repeat(auto-fill, 128px);
+      grid-template-columns: repeat(auto-fill, 120px);
       gap: 10px;
       margin-bottom: 20px;
     }
     #gallery img {
-      width: 128px;
-      height: 128px;
+      width: 120px;
+      height: 120px;
       object-fit: cover;
       cursor: pointer;
       border: 2px solid transparent;
