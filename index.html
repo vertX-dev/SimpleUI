@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Drag and Drop Grid</title>
+  <style>
+    /* Basic reset */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      display: flex;
+      height: 100vh;
+      font-family: Arial, sans-serif;
+    }
+
+    /* Sidebar styling */
+    #sidebar {
+      width: 200px;
+      background-color: #f2f2f2;
+      padding: 10px;
+      border-right: 2px solid #ddd;
+    }
+    
+    /* Draggable items in the sidebar */
+    .draggable {
+      width: 80px;
+      height: 80px;
+      background-color: #4CAF50;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      cursor: grab;
+      border-radius: 4px;
+    }
+
+    /* Grid container styling */
+    #grid {
+      flex: 1;
+      padding: 20px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-gap: 15px;
+      background-color: #e2e2e2;
+      justify-items: center;
+      align-items: center;
+    }
+
+    /* Grid cell styling */
+    .grid-cell {
+      width: 150px;
+      height: 150px;
+      background-color: #fff;
+      border: 2px dashed #bbb;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar with draggable items -->
+  <div id="sidebar">
+    <div class="draggable" draggable="true" id="item1">1</div>
+    <div class="draggable" draggable="true" id="item2">2</div>
+    <div class="draggable" draggable="true" id="item3">3</div>
+  </div>
+
+  <!-- Grid area where items can be dropped -->
+  <div id="grid">
+    <div class="grid-cell" data-cell="1"></div>
+    <div class="grid-cell" data-cell="2"></div>
+    <div class="grid-cell" data-cell="3"></div>
+    <div class="grid-cell" data-cell="4"></div>
+    <div class="grid-cell" data-cell="5"></div>
+    <div class="grid-cell" data-cell="6"></div>
+    <div class="grid-cell" data-cell="7"></div>
+    <div class="grid-cell" data-cell="8"></div>
+  </div>
+
+  <script>
+    // Get all draggable items and grid cells
+    const draggables = document.querySelectorAll('.draggable');
+    const gridCells = document.querySelectorAll('.grid-cell');
+
+    // Add event listeners for dragstart on draggable items
+    draggables.forEach(item => {
+      item.addEventListener('dragstart', dragStart);
+    });
+
+    // Add event listeners for dragover and drop on grid cells
+    gridCells.forEach(cell => {
+      cell.addEventListener('dragover', dragOver);
+      cell.addEventListener('drop', drop);
+    });
+
+    function dragStart(e) {
+      // Set the id of the dragged element
+      e.dataTransfer.setData('text/plain', e.target.id);
+    }
+
+    function dragOver(e) {
+      e.preventDefault(); // Allow dropping by preventing default behavior
+    }
+
+    function drop(e) {
+      e.preventDefault();
+      // Get the id of the dragged element from the data transfer object
+      const id = e.dataTransfer.getData('text/plain');
+      const draggableElement = document.getElementById(id);
+      
+      // Check if the drop target is a grid cell and is empty
+      if (e.target.classList.contains('grid-cell') && e.target.children.length === 0) {
+        e.target.appendChild(draggableElement);
+      }
+    }
+  </script>
+</body>
+</html>
