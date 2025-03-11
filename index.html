@@ -36,18 +36,18 @@
       justify-content: center;
       background: #051928;
     }
-    /* Grid container: 32x32 cells, each 64px x 64px */
+    /* Grid container: 32x32 cells, each 16px x 16px */
     #grid-container {
       display: grid;
       grid-template-columns: repeat(32, 16px);
       grid-template-rows: repeat(32, 16px);
       width: calc(32 * 16px);
       height: calc(32 * 16px);
-      border: 3px solid #888; /* Huge border for grid */
-      background: #fff;       /* White background for contrast */
+      border: 3px solid #888;
+      background: #fff;
     }
     .grid-cell {
-      border: 1px solid #ddd; /* Small border for each cell */
+      border: 1px solid #ddd;
       position: relative;
       cursor: pointer;
       background-color: transparent;
@@ -118,7 +118,7 @@
     const totalRows = 32, totalCols = 32;
     const gridContainer = document.getElementById('grid-container');
 
-    // Create grid cells (each cell represents one “unit”)
+    // Create grid cells (each cell represents one “unit” of 16x16 pixels)
     for (let row = 0; row < totalRows; row++) {
       for (let col = 0; col < totalCols; col++) {
         const cell = document.createElement('div');
@@ -144,7 +144,7 @@
         return;
       }
 
-      // Second click: if the cell is already highlighted, place the image.
+      // If the clicked cell is already highlighted, place the image.
       if (highlightedCell === cell) {
         cell.classList.remove('highlighted');
         highlightedCell = null;
@@ -163,19 +163,25 @@
             placedImg.style.height = "100%";
             cell.appendChild(placedImg);
           } else {
-            // For larger images, split them into pieces so that one grid cell corresponds to 16 image pixels.
+            // Determine how many 16x16 cells are needed.
             const cellsX = Math.ceil(naturalWidth / 16);
             const cellsY = Math.ceil(naturalHeight / 16);
-            const pieceWidth = naturalWidth / cellsX;
-            const pieceHeight = naturalHeight / cellsY;
-            // Determine the anchor offset:
-            const anchorOffsetX = (cellsX % 2 === 1) ? Math.floor(cellsX/2) : (cellsX/2 - 1);
-            const anchorOffsetY = (cellsY % 2 === 1) ? Math.floor(cellsY/2) : (cellsY/2);
-            // Calculate top-left cell of the block.
+            
+            // Create an offscreen canvas to scale the entire image
+            // to exactly cellsX*16 by cellsY*16 pixels.
+            const scaledCanvas = document.createElement('canvas');
+            scaledCanvas.width = cellsX * 16;
+            scaledCanvas.height = cellsY * 16;
+            const scaledCtx = scaledCanvas.getContext('2d');
+            scaledCtx.drawImage(tempImg, 0, 0, scaledCanvas.width, scaledCanvas.height);
+            
+            // Calculate offsets so that the clicked cell is centered.
+            const anchorOffsetX = Math.floor(cellsX / 2);
+            const anchorOffsetY = Math.floor(cellsY / 2);
             const topLeftCol = anchorCol - anchorOffsetX;
             const topLeftRow = anchorRow - anchorOffsetY;
             
-            // For each cell in the image block, crop and place the corresponding piece.
+            // For each cell piece, crop out a 16x16 chunk from the scaled canvas.
             for(let j = 0; j < cellsY; j++){
               for(let i = 0; i < cellsX; i++){
                 const cellCol = topLeftCol + i;
@@ -185,16 +191,18 @@
                   const index = cellRow * totalCols + cellCol;
                   const gridCell = gridContainer.children[index];
                   gridCell.innerHTML = "";
-                  // Create an offscreen canvas to crop the image piece.
-                  const canvas = document.createElement('canvas');
-                  canvas.width = pieceWidth;
-                  canvas.height = pieceHeight;
-                  const ctx = canvas.getContext('2d');
-                  // Draw the corresponding piece from the source image.
-                  ctx.drawImage(tempImg, i * pieceWidth, j * pieceHeight, pieceWidth, pieceHeight, 0, 0, pieceWidth, pieceHeight);
-                  // Create an img element from the canvas.
+                  
+                  // Create a new canvas for each cell piece.
+                  const cellCanvas = document.createElement('canvas');
+                  cellCanvas.width = 16;
+                  cellCanvas.height = 16;
+                  const cellCtx = cellCanvas.getContext('2d');
+                  // Crop the 16x16 piece from the scaled canvas.
+                  cellCtx.drawImage(scaledCanvas, i * 16, j * 16, 16, 16, 0, 0, 16, 16);
+                  
+                  // Create an image from the canvas and insert it into the grid cell.
                   const pieceImg = document.createElement('img');
-                  pieceImg.src = canvas.toDataURL();
+                  pieceImg.src = cellCanvas.toDataURL();
                   pieceImg.style.width = "100%";
                   pieceImg.style.height = "100%";
                   gridCell.appendChild(pieceImg);
@@ -205,7 +213,7 @@
         }
         tempImg.src = selectedImageSrc;
       } else {
-        // First click: highlight the cell.
+        // Highlight the cell if it's not already highlighted.
         if (highlightedCell) {
           highlightedCell.classList.remove('highlighted');
         }
