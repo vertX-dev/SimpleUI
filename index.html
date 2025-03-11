@@ -13,7 +13,7 @@
     body, html {
       font-family: sans-serif;
       height: 100%;
-      background: #051928;
+      background: #051928; /* Dark background */
       color: #fff;
     }
     header {
@@ -22,35 +22,35 @@
       padding: 10px;
       text-align: center;
     }
-    /* Main container: flex layout */
+    /* Main container: grid on left, sidebar on right */
     .container {
       display: flex;
-      height: calc(100vh - 50px);
-      justify-content: center;
-      align-items: center;
-      gap: 20px; /* Space between grid and sidebar */
     }
-    /* Grid wrapper with padding */
+    /* Grid wrapper: centers grid and adds spacing */
     .grid-wrapper {
-      flex-grow: 1;
+      margin: 70px 12px 0; /* Move grid down 70px and add 12px on left/right */
       display: flex;
+      align-items: center;
       justify-content: center;
-      align-items: flex-start;
-      padding-left: 20px; /* Added left space */
-      padding-top: 20px; /* Moves it down */
+      background: #051928;
+      /* For desktop: fixed size so all 32x32 cells (each 16px) are visible */
+      width: 512px;
+      height: 512px;
+      position: relative;
     }
-    /* Grid container: always visible */
+    /* Grid container: 32x32 cells (each 16px x 16px) */
     #grid-container {
       display: grid;
       grid-template-columns: repeat(32, 16px);
       grid-template-rows: repeat(32, 16px);
-      width: calc(32 * 16px);
-      height: calc(32 * 16px);
-      border: 3px solid #888;
-      background: #fff;
+      width: 512px;
+      height: 512px;
+      border: 3px solid #888; /* Huge border for grid */
+      background: #fff;       /* White background for contrast */
+      transform-origin: top left;
     }
     .grid-cell {
-      border: 1px solid #ddd;
+      border: 1px solid #ddd; /* Small border for each cell */
       position: relative;
       cursor: pointer;
       background-color: transparent;
@@ -58,14 +58,14 @@
     .grid-cell.highlighted {
       background-color: rgba(0, 255, 0, 0.3);
     }
-    /* Sidebar */
+    /* Sidebar: gallery and upload */
     .sidebar {
-      width: 200px;
+      width: 20%;
       padding: 10px;
       overflow-y: auto;
       background: #051928;
     }
-    /* Gallery */
+    /* Gallery grid styling */
     #gallery {
       display: grid;
       grid-template-columns: repeat(auto-fill, 120px);
@@ -85,19 +85,25 @@
     .upload-btn {
       width: 100%;
     }
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
+    /* Responsive adjustments: on smaller screens scale the grid to fit fully */
+    @media (max-width: 540px) {
+      .grid-wrapper {
+        width: calc(100vw - 24px);
+        height: calc(100vw - 24px);
+        margin: 70px 12px 0;
+      }
+      #grid-container {
+        /* Scale the fixed 512px grid to the available space */
+        transform: scale(calc((100vw - 24px) / 512));
+      }
+    }
+    /* Additional responsive adjustments for layout */
+    @media(max-width: 768px) {
       .container {
         flex-direction: column;
-        align-items: center;
       }
-      .grid-wrapper {
-        padding-left: 0;
-        padding-top: 10px;
-      }
-      .sidebar {
+      .grid-wrapper, .sidebar {
         width: 100%;
-        text-align: center;
       }
     }
   </style>
@@ -111,19 +117,21 @@
     <div class="grid-wrapper">
       <div id="grid-container"></div>
     </div>
-    <!-- Sidebar -->
+    <!-- Sidebar: gallery and upload -->
     <div class="sidebar">
-      <div id="gallery"></div>
+      <div id="gallery">
+        <!-- Uploaded image thumbnails will appear here -->
+      </div>
       <input type="file" id="image-upload" accept="image/*" multiple class="upload-btn">
     </div>
   </div>
   <script>
+    // Global variables
     let selectedImageSrc = null;
     let highlightedCell = null;
     const totalRows = 32, totalCols = 32;
     const gridContainer = document.getElementById('grid-container');
-
-    // Create grid cells
+    // Create grid cells (each cell represents one “unit”)
     for (let row = 0; row < totalRows; row++) {
       for (let col = 0; col < totalCols; col++) {
         const cell = document.createElement('div');
@@ -133,8 +141,8 @@
         gridContainer.appendChild(cell);
       }
     }
-
-    // Grid cell click event
+    
+    // Handle grid cell clicks for image placement.
     gridContainer.addEventListener('click', function(e) {
       let cell = e.target;
       if (!cell.classList.contains('grid-cell')) {
@@ -143,21 +151,24 @@
       }
       const anchorRow = parseInt(cell.dataset.row);
       const anchorCol = parseInt(cell.dataset.col);
-
+      
       if (!selectedImageSrc) {
         alert("Please select an image from the gallery first.");
         return;
       }
-
-      // If the cell is already highlighted, place the image
+      
+      // Second click: if the cell is already highlighted, place the image.
       if (highlightedCell === cell) {
         cell.classList.remove('highlighted');
         highlightedCell = null;
+      
+        // Create a temporary image to determine its natural size.
         const tempImg = new Image();
         tempImg.onload = function() {
           const naturalWidth = tempImg.naturalWidth;
           const naturalHeight = tempImg.naturalHeight;
-          if (naturalWidth <= 16 && naturalHeight <= 16) {
+          // If image is 16x16 or smaller, place directly.
+          if(naturalWidth <= 16 && naturalHeight <= 16) {
             cell.innerHTML = "";
             const placedImg = document.createElement('img');
             placedImg.src = selectedImageSrc;
@@ -165,28 +176,36 @@
             placedImg.style.height = "100%";
             cell.appendChild(placedImg);
           } else {
+            // For larger images, split them into pieces so that one grid cell corresponds to 16 image pixels.
             const cellsX = Math.ceil(naturalWidth / 16);
             const cellsY = Math.ceil(naturalHeight / 16);
             const pieceWidth = naturalWidth / cellsX;
             const pieceHeight = naturalHeight / cellsY;
-            const anchorOffsetX = (cellsX % 2 === 1) ? Math.floor(cellsX / 2) : (cellsX / 2 - 1);
-            const anchorOffsetY = (cellsY % 2 === 1) ? Math.floor(cellsY / 2) : (cellsY / 2);
+            // Determine the anchor offset:
+            const anchorOffsetX = (cellsX % 2 === 1) ? Math.floor(cellsX/2) : (cellsX/2 - 1);
+            const anchorOffsetY = (cellsY % 2 === 1) ? Math.floor(cellsY/2) : (cellsY/2);
+            // Calculate top-left cell of the block.
             const topLeftCol = anchorCol - anchorOffsetX;
             const topLeftRow = anchorRow - anchorOffsetY;
-
-            for (let j = 0; j < cellsY; j++) {
-              for (let i = 0; i < cellsX; i++) {
+                
+            // For each cell in the image block, crop and place the corresponding piece.
+            for(let j = 0; j < cellsY; j++){
+              for(let i = 0; i < cellsX; i++){
                 const cellCol = topLeftCol + i;
                 const cellRow = topLeftRow + j;
-                if (cellCol >= 0 && cellCol < totalCols && cellRow >= 0 && cellRow < totalRows) {
+                // Only place pieces within the grid boundaries.
+                if(cellCol >= 0 && cellCol < totalCols && cellRow >= 0 && cellRow < totalRows){
                   const index = cellRow * totalCols + cellCol;
                   const gridCell = gridContainer.children[index];
                   gridCell.innerHTML = "";
+                  // Create an offscreen canvas to crop the image piece.
                   const canvas = document.createElement('canvas');
                   canvas.width = pieceWidth;
                   canvas.height = pieceHeight;
                   const ctx = canvas.getContext('2d');
+                  // Draw the corresponding piece from the source image.
                   ctx.drawImage(tempImg, i * pieceWidth, j * pieceHeight, pieceWidth, pieceHeight, 0, 0, pieceWidth, pieceHeight);
+                  // Create an img element from the canvas.
                   const pieceImg = document.createElement('img');
                   pieceImg.src = canvas.toDataURL();
                   pieceImg.style.width = "100%";
@@ -199,6 +218,7 @@
         }
         tempImg.src = selectedImageSrc;
       } else {
+        // First click: highlight the cell.
         if (highlightedCell) {
           highlightedCell.classList.remove('highlighted');
         }
@@ -206,11 +226,11 @@
         highlightedCell = cell;
       }
     });
-
-    // Image upload and gallery
+    
+    // Handle image uploads and add to gallery.
     const imageUpload = document.getElementById('image-upload');
     const gallery = document.getElementById('gallery');
-
+    
     imageUpload.addEventListener('change', function(e) {
       const files = e.target.files;
       for (let file of files) {
@@ -218,6 +238,7 @@
         reader.onload = function(event) {
           const img = document.createElement('img');
           img.src = event.target.result;
+          // On clicking a thumbnail, mark it as selected.
           img.addEventListener('click', function() {
             document.querySelectorAll('#gallery img').forEach(el => el.classList.remove('selected'));
             img.classList.add('selected');
